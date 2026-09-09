@@ -1,0 +1,21 @@
+name: Build MORT decoder helper
+on:
+  push:
+    branches: [tooling/mort-decoder-build]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fetch decoder source
+        run: |
+          mkdir -p src
+          curl -L --fail -o src/MORTDecoder.cpp https://raw.githubusercontent.com/anxiousintrovert/StadiumBattleFX/main/tools/mort_decoder/MORTDecoder.cpp
+          curl -L --fail -o src/MORTDecoder.h https://raw.githubusercontent.com/anxiousintrovert/StadiumBattleFX/main/tools/mort_decoder/MORTDecoder.h
+          curl -L --fail -o src/main.cpp https://raw.githubusercontent.com/anxiousintrovert/StadiumBattleFX/main/tools/mort_decoder/main.cpp
+      - name: Build
+        run: g++ -std=c++17 -O2 -o mort_decoder src/main.cpp src/MORTDecoder.cpp
+      - name: Upload decoder
+        uses: actions/upload-artifact@v4
+        with:
+          name: mort-decoder-linux-x86_64
+          path: mort_decoder
