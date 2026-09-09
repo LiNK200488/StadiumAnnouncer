@@ -1,0 +1,20 @@
+{
+  "id": "STADIUM_ANNOUNCER",
+  "name": "Stadium Announcer",
+  "version": "1.0.3",
+  "api": 2,
+  "entry": "main.lua",
+  "profile": "content",
+  "category": "AUDIO",
+  "game_version": "0.0.0-dev || >=0.1.37 <2.0.0",
+  "priority": 110,
+  "dependencies": [],
+  "optional_dependencies": [],
+  "conflicts": [
+    "STADIUM_BATTLE_FX"
+  ],
+  "incompatible": [],
+  "permissions": [],
+  "affects_link": false,
+  "description": "Pokemon Stadium announcer voice lines only. No battle effects, models, arenas, cameras, ROM extractor, or cache builder."
+}
