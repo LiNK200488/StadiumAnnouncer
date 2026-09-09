@@ -1,0 +1,12 @@
+# Distribution and audio notice
+
+Stadium Announcer v1.0.3 includes the complete 823-clip announcer voice pack.
+
+The Stadium Announcer source code is licensed under the MIT License. The bundled
+Pokémon Stadium audio is not covered by that license; see
+`THIRD_PARTY_NOTICES.md`.
+
+Pokémon Stadium and its original game audio are the property of their
+respective rights holders. Anyone redistributing this repository or a release
+containing the audio assets is responsible for determining whether they have
+the rights or permission required to distribute those assets.
