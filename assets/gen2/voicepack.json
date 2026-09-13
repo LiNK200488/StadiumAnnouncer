@@ -1,0 +1,237 @@
+{
+  "format": "Stadium Announcer Gen2 voice pack v1",
+  "base_mod_id": "STADIUM_ANNOUNCER",
+  "base_mod_version": "1.0.4",
+  "source_game": "Pokemon Stadium 2 (USA)",
+  "clip_count": 1387,
+  "indices": [
+    0,
+    1386
+  ],
+  "filename_format": "%04d.wav",
+  "audio": {
+    "codec": "PCM",
+    "channels": 1,
+    "sample_rate": 16000,
+    "bits": 16
+  },
+  "confirmed_mappings": {
+    "move_names": {
+      "clip_formula": "264 + move_index",
+      "move_index_range": [
+        1,
+        251
+      ],
+      "clip_range": [
+        265,
+        515
+      ]
+    },
+    "pokemon_names": {
+      "clip_formula": "584 + national_dex",
+      "national_dex_range": [
+        1,
+        251
+      ],
+      "clip_range": [
+        585,
+        835
+      ]
+    },
+    "commentary_region": [
+      836,
+      1386
+    ],
+    "battle_introductions": {
+      "clip_range": [
+        516,
+        584
+      ],
+      "bank_range": [
+        "BANK_204",
+        "BANK_248"
+      ],
+      "clip_count": 69,
+      "binding_status": "reserved_only",
+      "note": "Block identity verified as Stadium 2 Battle Introductions. Individual bank-to-spoken-sentence mappings are not verified; runtime must not bind these clips to specific trainers yet."
+    },
+    "battle_end_exact": {
+      "1002": {
+        "bank": "BANK_3EA",
+        "spoken_line": "And there goes the battle!",
+        "semantic_trigger": "ordinary battle end",
+        "runtime_binding": "battle.ended"
+      },
+      "1003": {
+        "bank": "BANK_3EB",
+        "spoken_line": "Congratulations! The champion has been decided.",
+        "semantic_trigger": "Stadium 2 champion-decided result",
+        "runtime_binding": "unbound; Stadium-mode-specific"
+      },
+      "1004": {
+        "bank": "BANK_3EC",
+        "spoken_line": "That's it! Stage cleared!",
+        "semantic_trigger": "Stadium 2 stage clear",
+        "runtime_binding": "unbound; Stadium-mode-specific"
+      },
+      "1005": {
+        "bank": "BANK_3ED",
+        "spoken_line": "Congratulations! You've conquered the Gym Leader Castle!",
+        "semantic_trigger": "Stadium 2 Gym Leader Castle completion",
+        "runtime_binding": "unbound; Stadium-mode-specific"
+      },
+      "1006": {
+        "bank": "BANK_3EE",
+        "spoken_line": "Congratulations! You prevailed in the Kanto battle!",
+        "semantic_trigger": "Stadium 2 Kanto battle completion",
+        "runtime_binding": "unbound; Stadium-mode-specific"
+      }
+    },
+    "weather_exact": {
+      "1186": {
+        "bank": "BANK_4A2",
+        "spoken_line": "A heavy rain is falling here in Pokemon Stadium.",
+        "semantic_trigger": "weather becomes rain",
+        "runtime_binding": "wired"
+      },
+      "1187": {
+        "bank": "BANK_4A3",
+        "spoken_line": "You might want to bring an umbrella if you're heading out to the stadium.",
+        "semantic_trigger": "rain follow-up commentary",
+        "runtime_binding": "reserved; exact timing unverified"
+      },
+      "1188": {
+        "bank": "BANK_4A4",
+        "spoken_line": "A sandstorm is raging here in Pokemon Stadium.",
+        "semantic_trigger": "weather becomes sandstorm",
+        "runtime_binding": "wired"
+      },
+      "1189": {
+        "bank": "BANK_4A5",
+        "spoken_line": "You should bring goggles and a mask if you plan on joining us here.",
+        "semantic_trigger": "sandstorm follow-up commentary",
+        "runtime_binding": "reserved; exact timing unverified"
+      },
+      "1190": {
+        "bank": "BANK_4A6",
+        "spoken_line": "The sunlight has turned harsh here in Pokemon Stadium.",
+        "semantic_trigger": "weather becomes sun",
+        "runtime_binding": "wired"
+      },
+      "1191": {
+        "bank": "BANK_4A7",
+        "spoken_line": "Excuse me while I put on my sunglasses.",
+        "semantic_trigger": "sun follow-up commentary",
+        "runtime_binding": "reserved; exact timing unverified"
+      },
+      "1192": {
+        "bank": "BANK_4A8",
+        "spoken_line": "Now that the heavy downpour has finally stopped, the field has returned to normal.",
+        "semantic_trigger": "rain ends",
+        "runtime_binding": "wired"
+      },
+      "1193": {
+        "bank": "BANK_4A9",
+        "spoken_line": "Since the raging sandstorm has died down, the visibility has improved down on the field.",
+        "semantic_trigger": "sandstorm ends",
+        "runtime_binding": "wired"
+      },
+      "1194": {
+        "bank": "BANK_4AA",
+        "spoken_line": "With the harsh sunlight softening, the battle conditions appear to be changing.",
+        "semantic_trigger": "sun ends",
+        "runtime_binding": "wired"
+      },
+      "1311": {
+        "bank": "BANK_51F",
+        "spoken_line": "Oh look, there is a sudden downpour.",
+        "semantic_trigger": "rain begins",
+        "runtime_binding": "reserved alternate; exact selection rule unverified"
+      },
+      "1312": {
+        "bank": "BANK_520",
+        "spoken_line": "Oh wow, it started raining heavily.",
+        "semantic_trigger": "rain begins",
+        "runtime_binding": "reserved alternate; exact selection rule unverified"
+      },
+      "1313": {
+        "bank": "BANK_521",
+        "spoken_line": "The rain continues to fall.",
+        "semantic_trigger": "rain continues",
+        "runtime_binding": "reserved; exact continuation timing unverified"
+      },
+      "1314": {
+        "bank": "BANK_522",
+        "spoken_line": "The rain hasn't stopped yet.",
+        "semantic_trigger": "rain continues",
+        "runtime_binding": "reserved; exact variant-selection/timing unverified"
+      },
+      "1315": {
+        "bank": "BANK_523",
+        "spoken_line": "The rain finally stopped.",
+        "semantic_trigger": "rain ends",
+        "runtime_binding": "reserved; exact variant-selection/timing unverified"
+      },
+      "1316": {
+        "bank": "BANK_524",
+        "spoken_line": "The sunlight has turned harsh.",
+        "semantic_trigger": "sun begins",
+        "runtime_binding": "reserved; exact variant-selection/timing unverified"
+      },
+      "1317": {
+        "bank": "BANK_525",
+        "spoken_line": "The harsh sun continues to beat down.",
+        "semantic_trigger": "sun continues",
+        "runtime_binding": "reserved; exact variant-selection/timing unverified"
+      },
+      "1318": {
+        "bank": "BANK_526",
+        "spoken_line": "The sunlight has grown weaker.",
+        "semantic_trigger": "sun ends",
+        "runtime_binding": "reserved; exact variant-selection/timing unverified"
+      },
+      "1319": {
+        "bank": "BANK_527",
+        "spoken_line": "The sun shines harsh and bright.",
+        "semantic_trigger": "sun continues",
+        "runtime_binding": "reserved; exact variant-selection/timing unverified"
+      },
+      "1320": {
+        "bank": "BANK_528",
+        "spoken_line": "A sandstorm has started blowing.",
+        "semantic_trigger": "sandstorm begins",
+        "runtime_binding": "reserved; exact variant-selection/timing unverified"
+      },
+      "1321": {
+        "bank": "BANK_529",
+        "spoken_line": "The sandstorm is raging out of control.",
+        "semantic_trigger": "sandstorm continues",
+        "runtime_binding": "reserved; exact variant-selection/timing unverified"
+      },
+      "1322": {
+        "bank": "BANK_52A",
+        "spoken_line": "The sandstorm rips and tears.",
+        "semantic_trigger": "sandstorm continues",
+        "runtime_binding": "reserved; exact variant-selection/timing unverified"
+      },
+      "1323": {
+        "bank": "BANK_52B",
+        "spoken_line": "The sandstorm finally quieted.",
+        "semantic_trigger": "sandstorm ends",
+        "runtime_binding": "reserved; exact variant-selection/timing unverified"
+      },
+      "1324": {
+        "bank": "BANK_52C",
+        "spoken_line": "Sand is whipping about savagely.",
+        "semantic_trigger": "sandstorm continues",
+        "runtime_binding": "reserved; exact variant-selection/timing unverified"
+      },
+      "1325": {
+        "bank": "BANK_52D",
+        "spoken_line": "This scouring sandstorm hurts.",
+        "semantic_trigger": "sandstorm damage",
+        "runtime_binding": "reserved; exact variant-selection/timing unverified"
+      }
+    }
+  }
+}

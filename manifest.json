@@ -1,7 +1,7 @@
 {
   "id": "STADIUM_ANNOUNCER",
   "name": "Stadium Announcer",
-  "version": "1.0.3",
+  "version": "2.0.0",
   "api": 2,
   "entry": "main.lua",
   "profile": "content",
@@ -10,11 +10,13 @@
   "priority": 110,
   "dependencies": [],
   "optional_dependencies": [],
-  "conflicts": [
-    "STADIUM_BATTLE_FX"
-  ],
+  "conflicts": [],
   "incompatible": [],
   "permissions": [],
   "affects_link": false,
-  "description": "Pokemon Stadium announcer voice lines only. No battle effects, models, arenas, cameras, ROM extractor, or cache builder."
+  "description": "Generation-aware Pokemon Stadium announcer. Stadium 1 voices on Red/Blue/Yellow; Stadium 2 voices on Gold/Silver/Crystal.",
+  "games": [
+    "gen1",
+    "gen2"
+  ]
 }

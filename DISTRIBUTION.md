@@ -1,6 +1,6 @@
 # Distribution and audio notice
 
-Stadium Announcer v1.0.3 includes the complete 823-clip announcer voice pack.
+This package includes the 823-clip Gen1 announcer voice pack plus 1,387 decoded Stadium 2 WAV assets.
 
 The Stadium Announcer source code is licensed under the MIT License. The bundled
 Pokémon Stadium audio is not covered by that license; see
