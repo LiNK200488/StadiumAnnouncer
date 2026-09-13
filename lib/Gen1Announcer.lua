@@ -1,5 +1,5 @@
--- Pokemon Stadium announcer playback for Gen1Recomp battles.
--- The bundled voice pack lives under assets/announcer and contains numbered
+-- Generation 1 announcer module: Pokemon Stadium voice playback for Red/Blue/Yellow.
+-- The bundled voice pack lives under assets/gen1 and contains numbered
 -- WAV files plus voicepack.json. Audio licensing is documented separately in
 -- THIRD_PARTY_NOTICES.md; it is not covered by the source-code MIT license.
 
@@ -8,7 +8,7 @@ local mod = namespace.mod
 
 local Announcer = {}
 
-local VOICE_ROOT = "assets/announcer"
+local VOICE_ROOT = "assets/gen1"
 local CLIP_COUNT = 823
 local GAP_SECONDS = 0.12
 local MAX_QUEUE = 8
@@ -82,7 +82,9 @@ local state = {
   decisionIndex = 0,
   pendingFaints = {},
   pendingActions = {},
-  rotations = {},
+  openingEnemyRenderPending = false,
+  openingEnemyPresented = false,
+  lastChoices = {},
   moveCount = 0,
   packChecked = false,
   packReady = false,
@@ -91,9 +93,64 @@ local state = {
   warnedMissingPack = false,
 }
 
+local commentaryRandomSeed = nil
+
+local function seedCommentaryRandom()
+  local fine = 0
+  if love and love.timer and love.timer.getTime then
+    local ok, value = pcall(love.timer.getTime)
+    if ok and type(value) == "number" then fine = value end
+  elseif os and os.clock then
+    local ok, value = pcall(os.clock)
+    if ok and type(value) == "number" then fine = value end
+  end
+
+  local epoch = 0
+  if os and os.time then
+    local ok, value = pcall(os.time)
+    if ok and type(value) == "number" then epoch = value end
+  end
+
+  local seed = (math.floor(fine * 1000000) + epoch) % 2147483647
+  if seed <= 0 then seed = 1 end
+  return seed
+end
+
+-- Private Park-Miller stream for interchangeable commentary selection. This deliberately does
+-- not consume the game's battle RNG (or Lua/LÖVE's shared global RNG).
+local function nextCommentaryRandom()
+  local seed = commentaryRandomSeed or seedCommentaryRandom()
+  local hi = math.floor(seed / 127773)
+  local lo = seed - hi * 127773
+  local value = 16807 * lo - 2836 * hi
+  if value <= 0 then value = value + 2147483647 end
+  commentaryRandomSeed = value
+  return value
+end
+
+local function randomChoiceIndex(count, previous)
+  if count <= 0 then return nil end
+  if count == 1 then return 1 end
+
+  -- A two-clip pool gets a random starting point, then alternates from there.
+  -- This keeps both clips in rotation without always forcing the same clip to
+  -- be first. Larger pools remain random while avoiding an immediate repeat.
+  if count == 2 then
+    if previous == 1 then return 2 end
+    if previous == 2 then return 1 end
+    return (nextCommentaryRandom() % 2) + 1
+  end
+
+  local at = (nextCommentaryRandom() % count) + 1
+  if previous and previous >= 1 and previous <= count and at == previous then
+    local offset = (nextCommentaryRandom() % (count - 1)) + 1
+    at = ((previous - 1 + offset) % count) + 1
+  end
+  return at
+end
+
 local function enabled()
-  return not (mod.options and mod.options.get)
-      or mod.options:get("announcer") ~= false
+  return true
 end
 
 local function scope()
@@ -133,7 +190,9 @@ local function resetPlayback()
   state.decisionPrompted = false
   state.pendingFaints = {}
   state.pendingActions = {}
-  state.rotations = {}
+  state.openingEnemyRenderPending = false
+  state.openingEnemyPresented = false
+  state.lastChoices = {}
   state.moveCount = 0
 end
 
@@ -294,9 +353,11 @@ end
 
 local faintReady
 
-local function rotate(name, clips)
-  local at = (state.rotations[name] or 0) % #clips + 1
-  state.rotations[name] = at
+local function randomChoice(name, clips)
+  local n = #clips
+  if n == 0 then return nil end
+  local at = randomChoiceIndex(n, state.lastChoices[name])
+  state.lastChoices[name] = at
   return clips[at]
 end
 
@@ -367,6 +428,37 @@ local function sendoutReady(action)
   return (action.seenSending or action.seenText) and true or false
 end
 
+-- Initial enemy names use the render-side presentation seam rather than
+-- polling the intro queue. Gen1Recomp's own renderer considers the enemy
+-- presentation settled only after the intro slide/balls are gone, the
+-- trainer slot is clear (trainer/link battles), enemy send-out/grow-in has
+-- finished, and the entrance cry/HUD hold has completed. The same state is
+-- valid for wild battles: showEnemyTrainer is simply false/nil there, so no
+-- trainer-specific event is required.
+local function initialEnemyRenderReady(action)
+  if action.battle ~= state.battle then return nil end
+  return state.openingEnemyPresented and true or false
+end
+
+local function enemyPresentationSettled(battle)
+  if battle ~= state.battle then return false end
+  local enemy = battle and battle.enemy
+  if not enemy or enemy.fainted then return false end
+
+  -- Match the Gen 1 renderer's enemy-HUD presentation gate, but do not
+  -- depend on statusHUDVisible(): another mod may hide the HUD while the
+  -- Pokemon itself is still fully presented.
+  if (tonumber(battle.introSlide) or 0) ~= 0 then return false end
+  if battle.introBalls then return false end
+  if battle.showEnemyTrainer then return false end
+  if battle.enemySendingOut then return false end
+  if battle.enemyHudPending then return false end
+
+  local grow = battle.growIn
+  if grow and grow.battler == enemy then return false end
+  return true
+end
+
 local function messageReady(action)
   if action.battle ~= state.battle then return nil end
   if textVisible(action.battle) then action.seenBusy = true return false end
@@ -397,6 +489,18 @@ local function faintActionReady(action)
 end
 
 local function releaseAction(action)
+  -- The Gen 1 Gym/Elite/Champion intro clips are 6-12 seconds long. If one
+  -- is still speaking when the opening enemy is actually presented, it would
+  -- otherwise hold the species call until both Pokemon are already on-field.
+  -- Let that live visual beat supersede only the opening intro commentary.
+  if action.preemptIntro and state.current
+      and state.currentPriority == PRIORITY.intro then
+    stopSource(state.current)
+    state.current = nil
+    state.currentIndex = nil
+    state.currentPriority = nil
+    state.gap = 0
+  end
   if action.switchClip then
     enqueue(action.switchClip, PRIORITY.sendout, action.key .. ":switch")
   end
@@ -437,7 +541,7 @@ local function startFlowCommentary()
     return false
   end
   state.flowPending = false
-  state.flowIndex = state.flowIndex % #FLOW + 1
+  state.flowIndex = randomChoiceIndex(#FLOW, state.flowIndex)
   return enqueue(FLOW[state.flowIndex], PRIORITY.ambient, "battle_flow")
 end
 
@@ -496,7 +600,7 @@ local function updateDecisionIdle(dt, game)
   -- the announcer is quiet, the same still-idle decision can claim the gap.
   if state.current or #state.queue > 0 or #state.pendingActions > 0
      or state.gap > 0 then return end
-  state.decisionIndex = state.decisionIndex % #DECISION_IDLE + 1
+  state.decisionIndex = randomChoiceIndex(#DECISION_IDLE, state.decisionIndex)
   if enqueue(DECISION_IDLE[state.decisionIndex], PRIORITY.ambient, "decision_idle") then
     state.decisionPrompted = true
   end
@@ -539,23 +643,43 @@ function Announcer.beginBattle(battle)
   state.intro = intro and intro.clip or nil
   state.champion = intro and intro.champion or false
   if intro then enqueue(intro.clip, PRIORITY.intro, "encounter_intro") end
-  -- The battle event is emitted while Gen1Recomp is still BUILDING its intro
-  -- queue. Keep both names pending until each side's send-out text has been
-  -- dismissed and its entry flag has dropped.
+  -- The enemy opening is synchronized from battle.overlay, after Gen1Recomp
+  -- has actually rendered the enemy as fully presented. This deliberately
+  -- handles trainer/link and wild openings through the renderer's shared
+  -- presentation state instead of trying to infer them from bottom text or
+  -- short-lived queue flags. The player keeps the known-good existing path.
   for _, side in ipairs({ "enemy", "player" }) do
     local battler = battle[side]
     local dex = dexFor(battle, battler)
     if dex then
+      if side == "enemy" then state.openingEnemyRenderPending = true end
       deferAction({ battle = battle, battler = battler, side = side,
         clip = 368 + dex, priority = PRIORITY.sendout,
-        key = "initial_" .. side, ready = sendoutReady,
-        -- Enemy openings do not consistently expose enemySendingOut in Gen1Recomp.
-        -- Wait for either the intro text or a sending flag to complete instead.
-        requireSending = false,
+        key = "initial_" .. side,
+        ready = side == "enemy" and initialEnemyRenderReady or sendoutReady,
+        -- v1.0.28 proved the player's real sendingOut flag is observable and
+        -- keeps that name attached to the actual player entrance. The enemy
+        -- now uses the render seam instead of requiring enemySendingOut.
+        requireSending = side == "player",
+        preemptIntro = side == "enemy",
         seenText = textVisible(battle),
         seenSending = sideSending(battle, side) and true or false })
     end
   end
+  return true
+end
+
+function Announcer.observeBattleRender(battle)
+  if not state.openingEnemyRenderPending or state.openingEnemyPresented then
+    return false
+  end
+  if not enemyPresentationSettled(battle) then return false end
+
+  -- Do not enqueue audio from the draw hook itself. Latch the presentation
+  -- edge here; Announcer.update releases the pending name on the next logic
+  -- tick, keeping playback/queue mutation out of rendering.
+  state.openingEnemyPresented = true
+  state.openingEnemyRenderPending = false
   return true
 end
 
@@ -569,7 +693,7 @@ function Announcer.battlerSwitched(payload)
   return deferAction({ battle = battle, battler = battler, side = side,
     clip = 368 + dex, priority = PRIORITY.sendout,
     switchClip = trainerChangedPokemon(payload)
-      and rotate(side .. "_switch",
+      and randomChoice(side .. "_switch",
         side == "player" and SWITCH_PLAYER or SWITCH_ENEMY) or nil,
     key = side .. "_sendout", ready = sendoutReady,
     seenText = textVisible(battle),
@@ -584,7 +708,7 @@ function Announcer.moveUsed(payload)
   state.moveCount = state.moveCount + 1
   local queued = deferAction({ battle = battle, anim = payload.move.id,
     clip = 583 + moveIndex, priority = PRIORITY.move,
-    firstMove = state.moveCount == 1 and rotate("first_move", FIRST_MOVE) or nil,
+    firstMove = state.moveCount == 1 and randomChoice("first_move", FIRST_MOVE) or nil,
     key = "move:" .. tostring(state.moveCount), ready = moveReady,
     seenBusy = textVisible(battle) })
   noteMoveForFlow()
@@ -594,12 +718,12 @@ end
 function Announcer.damageDealt(payload)
   if not payload or payload.battle ~= state.battle then return false end
   local clip
-  if payload.crit then clip = rotate("critical", CRITICAL) end
+  if payload.crit then clip = randomChoice("critical", CRITICAL) end
   local mult = tonumber(payload.typeMult)
   if not clip and mult and mult > 10 then
-    clip = rotate("super_effective", SUPER_EFFECTIVE)
+    clip = randomChoice("super_effective", SUPER_EFFECTIVE)
   elseif not clip and mult and mult < 10 then
-    clip = rotate("not_effective", NOT_EFFECTIVE)
+    clip = randomChoice("not_effective", NOT_EFFECTIVE)
   end
   if not clip then return false end
   return deferAction({ battle = payload.battle, target = payload.target,
@@ -633,7 +757,7 @@ function Announcer.fainted(payload)
   local battler = payload and payload.battler
   if not battler or payload.battle ~= state.battle then return false end
   return deferAction({ battle = payload.battle, battler = battler,
-    clip = rotate("faint", FAINT), priority = PRIORITY.faint,
+    clip = randomChoice("faint", FAINT), priority = PRIORITY.faint,
     key = "faint:" .. tostring(battler), ready = faintActionReady })
 end
 
